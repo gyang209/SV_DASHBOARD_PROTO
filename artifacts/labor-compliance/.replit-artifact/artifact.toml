@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Labor Compliance Dashboard"
+description = "A secure workflow and live tracking dashboard for City of Sunnyvale contractor labor compliance. Staff can check registrations, payroll and forms, payment timing, withholdings, and restitution while reading and writing records in the existing normalized Grist database."
+version = "1.0.0"
+id = "artifacts/labor-compliance"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23395
+
+[services.development]
+run = "pnpm --filter @workspace/labor-compliance run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/labor-compliance", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/labor-compliance/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23395"
+BASE_PATH = "/"

@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --background: 42 34% 96%;
+  --foreground: 213 29% 18%;
+  --border: 39 19% 84%;
+  --input: 39 19% 84%;
+  --card: 42 40% 99%;
+  --card-foreground: 213 29% 18%;
+  --card-border: 39 19% 84%;
+  --sidebar: 211 37% 19%;
+  --sidebar-foreground: 42 30% 94%;
+  --sidebar-border: 211 25% 29%;
+  --sidebar-primary: 38 70% 59%;
+  --sidebar-primary-foreground: 211 37% 17%;
+  --sidebar-accent: 210 27% 27%;
+  --sidebar-accent-foreground: 42 35% 96%;
+  --sidebar-ring: 38 70% 59%;
+  --primary: 211 37% 25%;
+  --primary-foreground: 42 35% 97%;
+  --secondary: 40 31% 90%;
+  --secondary-foreground: 213 27% 24%;
+  --muted: 39 24% 91%;
+  --muted-foreground: 214 12% 47%;
+  --accent: 39 61% 87%;
+  --accent-foreground: 211 37% 21%;
+  --destructive: 2 59% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 38 70% 48%;
+  --chart-1: 211 37% 25%;
+  --chart-2: 151 31% 42%;
+  --chart-3: 38 70% 59%;
+  --chart-4: 2 59% 45%;
+  --chart-5: 198 28% 50%;
+  --popover: 42 40% 99%;
+  --popover-foreground: 213 29% 18%;
+  --popover-border: 39 19% 84%;
+  --app-font-sans: 'DM Sans', sans-serif;
+  --app-font-display: 'Manrope', sans-serif;
+  --app-font-mono: 'IBM Plex Mono', monospace;
+  --radius: 0.7rem;
+  --shadow: 0 12px 32px rgba(44,55,65,.08);
+}
+
+.dark {
+  --background: 211 30% 12%;
+  --foreground: 42 30% 94%;
+  --border: 211 20% 27%;
+  --input: 211 20% 27%;
+  --card: 211 27% 16%;
+  --card-foreground: 42 30% 94%;
+  --card-border: 211 20% 27%;
+  --sidebar: 211 35% 10%;
+  --sidebar-foreground: 42 30% 94%;
+  --sidebar-border: 211 20% 24%;
+  --sidebar-primary: 38 70% 59%;
+  --sidebar-primary-foreground: 211 37% 17%;
+  --sidebar-accent: 210 27% 20%;
+  --sidebar-accent-foreground: 42 35% 96%;
+  --sidebar-ring: 38 70% 59%;
+  --primary: 38 70% 59%;
+  --primary-foreground: 211 37% 15%;
+  --secondary: 211 22% 23%;
+  --secondary-foreground: 42 30% 94%;
+  --muted: 211 22% 21%;
+  --muted-foreground: 213 13% 68%;
+  --accent: 211 22% 23%;
+  --accent-foreground: 42 30% 94%;
+  --destructive: 2 58% 52%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 38 70% 59%;
+  --chart-1: 38 70% 59%;
+  --chart-2: 151 34% 52%;
+  --chart-3: 198 35% 58%;
+  --chart-4: 2 59% 58%;
+  --chart-5: 211 31% 64%;
+  --popover: 211 27% 16%;
+  --popover-foreground: 42 30% 94%;
+  --popover-border: 211 20% 27%;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body { background: #f1eee5; color: #263b4d; font-family: var(--app-font-sans); }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+h1, h2, h3, p { margin-top: 0; }
+
+.contractor-template-stage { min-height: 100dvh; position: relative; }
+.eyebrow { color: #9a7333; font: 500 10px var(--app-font-mono); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 9px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #d8d1c3; border-radius: 7px; padding: 10px 14px; background: #fbf9f4; color: #2b3e4e; font-size: 12px; font-weight: 600; transition: transform .16s, background .16s; white-space: nowrap; }
+.btn:hover { background: #f1eadc; transform: translateY(-1px); }
+.btn-primary { background: #29435a; border-color: #29435a; color: #f8f5eb; }
+.btn-primary:hover { background: #36576e; }
+.btn svg { width: 15px; height: 15px; }
+.field { width: 100%; border: 1px solid #dcd5c8; background: #fffefa; border-radius: 6px; padding: 10px 11px; color: #283c4e; font-size: 12px; outline: none; }
+.field:focus { border-color: #788c97; box-shadow: 0 0 0 3px rgba(90,117,132,.12); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(24,39,51,.46); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 18px; animation: fade-in .18s both; }
+.modal { width: min(720px, 100%); max-height: min(88dvh, 850px); overflow: auto; background: #fbfaf6; border-radius: 12px; box-shadow: 0 24px 70px rgba(18,32,44,.25); animation: rise-in .2s both; }
+.modal-head { padding: 21px 24px; border-bottom: 1px solid #e8e2d6; display: flex; justify-content: space-between; align-items: flex-start; }
+.modal-title { font: 700 19px var(--app-font-display); color: #263c4e; margin: 0; }
+.modal-body { padding: 22px 24px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.form-field label { display: block; font: 500 10px var(--app-font-mono); color: #6f797d; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.form-field.full { grid-column: 1 / -1; }
+.form-field textarea { min-height: 84px; resize: vertical; }
+.modal-foot { padding: 15px 24px 21px; display: flex; justify-content: flex-end; gap: 9px; border-top: 1px solid #e8e2d6; }
+.close-btn { border: 0; background: transparent; color: #758087; padding: 4px; }
+.close-btn svg { width: 18px; }
+.preview-notice { margin-top: 13px; padding: 10px 12px; background: #edf0eb; border-radius: 6px; color: #50655c; font-size: 11px; line-height: 1.45; }
+.reopen-shell { min-height: 100dvh; display: grid; place-items: center; padding: 18px; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 600px) {
+  .modal-head, .modal-body { padding: 18px; }
+  .modal-foot { padding: 13px 18px 17px; }
+}

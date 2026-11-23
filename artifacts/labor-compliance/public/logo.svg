@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <rect width="38" height="38" rx="9" fill="#D4AA5C"/>
+  <path d="M9 18.2 19 10l10 8.2v11.3H9V18.2Z" stroke="#243849" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M15 29.5v-7h8v7M7 18.5l12-10 12 10" stroke="#243849" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="48" y="17" fill="#263B4D" font-family="DM Sans, sans-serif" font-size="13" font-weight="700">CITY OF SUNNYVALE</text>
+  <text x="48" y="31" fill="#727D80" font-family="DM Sans, sans-serif" font-size="9" letter-spacing="1.1">PUBLIC WORKS</text>
+</svg>

@@ -1,0 +1,1057 @@
+openapi: 3.1.0
+info:
+  # Do not change the title; generated imports depend on it.
+  title: Api
+  version: 0.1.0
+  description: Labor compliance dashboard API backed by SQL Server.
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: compliance
+  - name: database
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /workspace:
+    get:
+      operationId: getWorkspace
+      tags: [compliance]
+      summary: Get project, contractor, and withholding data
+      responses:
+        "200":
+          description: Current SQL Server workspace data and dashboard totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceData"
+  /record-history/{recordType}/{id}:
+    get:
+      operationId: getRecordHistory
+      tags: [compliance]
+      summary: Get edit history for one project or contractor
+      parameters:
+        - name: recordType
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/RecordHistoryType" }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Recent edits and changed values for the record
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RecordHistoryEvent" }
+  /reference-only:
+    get:
+      operationId: getReferenceOnly
+      tags: [compliance]
+      summary: Get reference-only projects and linked source data
+      responses:
+        "200":
+          description: Reference-only projects, source rows, and linked records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferenceOnlyCatalog"
+  /trash:
+    get:
+      operationId: getTrash
+      tags: [compliance]
+      summary: List records deleted within the recovery period
+      responses:
+        "200":
+          description: Records that can still be restored
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TrashRecord" }
+  /trash/audit:
+    get:
+      operationId: getTrashAudit
+      tags: [compliance]
+      summary: List recent delete and restore activity
+      responses:
+        "200":
+          description: Recent Trash audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TrashAuditEvent" }
+  /trash/{recordType}/{recordId}:
+    delete:
+      operationId: moveRecordToTrash
+      tags: [compliance]
+      summary: Move one dashboard record to Trash
+      parameters:
+        - name: recordType
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/TrashRecordType" }
+        - name: recordId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Record moved to Trash
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrashRecord" }
+        "404":
+          description: Record not found
+        "409":
+          description: Record is already in Trash
+        "503":
+          description: Trash storage is unavailable
+  /trash/{id}/restore:
+    post:
+      operationId: restoreTrashRecord
+      tags: [compliance]
+      summary: Restore a record before its recovery period ends
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204":
+          description: Record restored to active pages
+        "404":
+          description: Item is missing or its recovery period ended
+        "503":
+          description: Trash storage is unavailable
+  /workbook-sheets/{sheetName}:
+    get:
+      operationId: getWorkbookSheetRows
+      tags: [compliance]
+      summary: Get exact source rows for a workbook sheet
+      parameters:
+        - name: sheetName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Source rows for the requested workbook sheet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkbookSheetRow"
+  /database/tables:
+    get:
+      operationId: getDatabaseTables
+      tags: [database]
+      summary: List SQL Server tables and columns
+      responses:
+        "200":
+          description: SQL Server tables available in the dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseCatalog"
+  /database/tables/{schemaName}/{tableName}/rows:
+    post:
+      operationId: queryDatabaseTableRows
+      tags: [database]
+      summary: Browse rows from a SQL Server table
+      parameters:
+        - name: schemaName
+          in: path
+          required: true
+          schema: { type: string }
+        - name: tableName
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseRowsQuery"
+      responses:
+        "200":
+          description: One page of matching SQL Server rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRows"
+    patch:
+      operationId: updateDatabaseTableRow
+      tags: [database]
+      summary: Update editable values on one SQL Server row
+      parameters:
+        - name: schemaName
+          in: path
+          required: true
+          schema: { type: string }
+        - name: tableName
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DatabaseRowUpdate"
+      responses:
+        "200":
+          description: SQL Server row updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseRowUpdateResponse"
+  /projects:
+    post:
+      operationId: createProject
+      tags: [compliance]
+      summary: Add a project to the compliance register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    patch:
+      operationId: updateProject
+      tags: [compliance]
+      summary: Update project and compliance checks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /contractors:
+    post:
+      operationId: createContractor
+      tags: [compliance]
+      summary: Add a contractor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractorInput"
+      responses:
+        "201":
+          description: Contractor created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+        "503":
+          description: Contractor-subcontractor storage migration is required
+  /contractors/{id}:
+    patch:
+      operationId: updateContractor
+      tags: [compliance]
+      summary: Update a contractor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractorUpdate"
+      responses:
+        "200":
+          description: Contractor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+  /contractor-subcontractor-links/{id}:
+    patch:
+      operationId: updateContractorSubcontractorLink
+      tags: [compliance]
+      summary: Update a subcontractor link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractorSubcontractorLinkUpdate"
+      responses:
+        "200":
+          description: Updated subcontractor link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractorSubcontractor"
+        "400":
+          description: Invalid project selection
+        "409":
+          description: Another link already exists for the selected project
+        "404":
+          description: Subcontractor link not found
+        "503":
+          description: Contractor-subcontractor storage migration is required
+    delete:
+      operationId: deleteContractorSubcontractorLink
+      tags: [compliance]
+      summary: Remove a subcontractor link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Subcontractor link removed
+        "404":
+          description: Subcontractor link not found
+        "503":
+          description: Contractor-subcontractor storage migration is required
+  /withholdings:
+    post:
+      operationId: createWithholding
+      tags: [compliance]
+      summary: Add a withholding record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithholdingInput"
+      responses:
+        "201":
+          description: Withholding created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withholding"
+  /withholdings/{id}:
+    patch:
+      operationId: updateWithholding
+      tags: [compliance]
+      summary: Update a withholding record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithholdingUpdate"
+      responses:
+        "200":
+          description: Withholding updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Withholding"
+  /restitutions:
+    get:
+      operationId: getRestitutions
+      tags: [compliance]
+      summary: List restitution records
+      responses:
+        "200":
+          description: Restitution records stored in SQL Server
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Restitution" }
+        "503":
+          description: Restitution table is not installed or is not accessible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+    post:
+      operationId: createRestitution
+      tags: [compliance]
+      summary: Add a restitution record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RestitutionInput" }
+      responses:
+        "201":
+          description: Restitution record created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Restitution" }
+        "400":
+          description: Invalid restitution record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+        "503":
+          description: Restitution table is not installed or is not accessible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+  /restitutions/{id}:
+    patch:
+      operationId: updateRestitution
+      tags: [compliance]
+      summary: Update a restitution record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RestitutionUpdate" }
+      responses:
+        "200":
+          description: Restitution record updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Restitution" }
+        "400":
+          description: Invalid restitution record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+        "404":
+          description: Restitution record not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+        "503":
+          description: Restitution table is not installed or is not accessible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestitutionStorageError" }
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    DashboardSummary:
+      type: object
+      required: [totalProjects, dueSoon, overdue, unreleasedWithholdings, amountWithheld]
+      properties:
+        totalProjects: { type: integer }
+        dueSoon: { type: integer }
+        overdue: { type: integer }
+        unreleasedWithholdings: { type: integer }
+        amountWithheld: { type: number }
+        refreshedAt: { type: string }
+    TrashRecordType:
+      type: string
+      enum: [project, contractor, withholding, restitution, subcontractorLink, sourceRow]
+    TrashRecord:
+      type: object
+      required: [id, recordType, recordId, title, payloadJson, deletedAt, expiresAt, deletedBy, affectedRecords]
+      properties:
+        id: { type: integer }
+        recordType: { $ref: "#/components/schemas/TrashRecordType" }
+        recordId: { type: string }
+        title: { type: string }
+        payloadJson: { type: ["string", "null"] }
+        deletedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        deletedBy: { type: ["string", "null"] }
+        affectedRecords:
+          type: array
+          items: { $ref: "#/components/schemas/TrashAffectedRecord" }
+    TrashAffectedRecord:
+      type: object
+      required: [recordType, recordId, title, impact]
+      properties:
+        recordType: { $ref: "#/components/schemas/TrashRecordType" }
+        recordId: { type: string }
+        title: { type: string }
+        impact: { type: string }
+        alternateNames: { type: string }
+    TrashAuditEvent:
+      type: object
+      required: [id, recordType, recordId, title, action, actorId, occurredAt]
+      properties:
+        id: { type: integer }
+        recordType: { $ref: "#/components/schemas/TrashRecordType" }
+        recordId: { type: string }
+        title: { type: string }
+        action: { type: string, enum: [deleted, restored] }
+        actorId: { type: string }
+        occurredAt: { type: string, format: date-time }
+    RecordHistoryType:
+      type: string
+      enum: [project, contractor]
+    RecordFieldChange:
+      type: object
+      required: [field, before, after]
+      properties:
+        field: { type: string }
+        before: { type: string }
+        after: { type: string }
+    RecordHistoryEvent:
+      type: object
+      required: [id, recordType, recordId, actorId, occurredAt, changes]
+      properties:
+        id: { type: integer }
+        recordType: { $ref: "#/components/schemas/RecordHistoryType" }
+        recordId: { type: string }
+        actorId: { type: string }
+        occurredAt: { type: string, format: date-time }
+        changes:
+          type: array
+          items: { $ref: "#/components/schemas/RecordFieldChange" }
+    WorkspaceData:
+      type: object
+      required: [projects, contractors, withholdings, summary]
+      properties:
+        projects:
+          type: array
+          items: { $ref: "#/components/schemas/Project" }
+        contractors:
+          type: array
+          items: { $ref: "#/components/schemas/Contractor" }
+        withholdings:
+          type: array
+          items: { $ref: "#/components/schemas/Withholding" }
+        summary: { $ref: "#/components/schemas/DashboardSummary" }
+    Contractor:
+      type: object
+      required: [id, name, aliases, sourceCount, projectCount, subcontractorCount, subcontractors]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        aliases: { type: string }
+        sourceCount: { type: integer }
+        sourceSheets: { type: string }
+        projectCount: { type: integer }
+        subcontractorCount: { type: integer }
+        subcontractors:
+          type: array
+          items: { $ref: "#/components/schemas/ContractorSubcontractor" }
+    ContractorSubcontractor:
+      type: object
+      required: [id, linkId, projectId, projectName, projectNumber, projectType, subcontractorId, subcontractorName, lcpStatus, dirStatus, completionStatus, projectRegistrationBypass, projectRegistrationBypassStatus, projectPayrollFormsBypass, projectPayrollFormsBypassStatus]
+      properties:
+        id: { type: string }
+        linkId: { type: ["integer", "null"] }
+        projectId: { type: integer }
+        projectName: { type: string }
+        projectNumber: { type: string }
+        projectType: { type: string }
+        subcontractorId: { type: integer }
+        subcontractorName: { type: string }
+        lcpStatus: { type: string }
+        dirStatus: { type: string }
+        completionStatus: { type: string }
+        projectRegistrationBypass: { type: boolean }
+        projectRegistrationBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        projectPayrollFormsBypass: { type: boolean }
+        projectPayrollFormsBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+    ContractorSubcontractorLinkUpdate:
+      type: object
+      required: [projectId, projectType]
+      properties:
+        projectId: { type: integer, minimum: 1 }
+        projectType:
+          type: string
+          enum: [Federal, Design, On Call, PAS CIP+DPW]
+    ContractorInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        aliases: { type: string }
+        subcontractor:
+          $ref: "#/components/schemas/ContractorSubcontractorInput"
+    ContractorSubcontractorInput:
+      type: object
+      required: [projectId, projectType]
+      anyOf:
+        - required: [name]
+        - required: [contractorId]
+      properties:
+        name: { type: string, minLength: 1 }
+        contractorId: { type: integer }
+        projectId: { type: integer }
+        projectType:
+          type: string
+          enum: [Federal, Design, On Call, PAS CIP+DPW]
+    ContractorUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        aliases: { type: string }
+    Project:
+      type: object
+      required: [id, projectKey, projectNumber, projectName, dirNumber, classification, contractorId, contractorName, intakeDate, registrationStatus, registrationBypass, registrationBypassStatus, payrollFormsStatus, payrollFormsBypass, payrollFormsBypassStatus, formsStatus, form1Status, form2Status, form3Status, form4Status, paymentDueDate, paymentDate, complianceNotes, projectInitiationDate, projectFinishDate, pwc100, pwc100RegisteredDate, pwc100ExpirationDate, designProjectManager, designProjectManagerEmail, designWeekStart, designWeekEnd, designPwcrExpirationDate, primeApprover, federalProject, federalProjectNumber, davisBaconDetermination, federalSetupInLcp, federalNotes, federalActive, designProject, onCall, pasCipDpw, latePayment, daysUntilDue]
+      properties:
+        id: { type: integer }
+        projectKey: { type: string }
+        projectNumber: { type: string }
+        projectName: { type: string }
+        dirNumber: { type: string }
+        classification: { type: string }
+        contractorId: { type: ["integer", "null"] }
+        contractorName: { type: string }
+        intakeDate: { type: ["string", "null"] }
+        registrationStatus: { type: string }
+        registrationBypass: { type: boolean }
+        registrationBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        registrationCheckedOn: { type: ["string", "null"] }
+        payrollFormsStatus: { type: string }
+        payrollFormsBypass: { type: boolean }
+        payrollFormsBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        payrollFormsCheckedOn: { type: ["string", "null"] }
+        formsStatus: { type: string, enum: ["Not tracked", "Projects with missing forms", "Projects with all forms"] }
+        form1Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form2Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form3Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form4Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        paymentDueDate: { type: ["string", "null"] }
+        paymentDate: { type: ["string", "null"] }
+        complianceNotes: { type: string }
+        projectInitiationDate: { type: ["string", "null"] }
+        projectFinishDate: { type: ["string", "null"] }
+        pwc100: { type: boolean }
+        pwc100RegisteredDate: { type: ["string", "null"] }
+        pwc100ExpirationDate: { type: ["string", "null"] }
+        designProjectManager: { type: string }
+        designProjectManagerEmail: { type: string }
+        designWeekStart: { type: ["string", "null"] }
+        designWeekEnd: { type: ["string", "null"] }
+        designPwcrExpirationDate: { type: ["string", "null"] }
+        primeApprover: { type: string }
+        federalProject: { type: boolean }
+        federalProjectNumber: { type: ["string", "null"] }
+        davisBaconDetermination: { type: ["string", "null"] }
+        federalSetupInLcp: { type: ["string", "null"] }
+        federalNotes: { type: ["string", "null"] }
+        federalActive: { type: ["string", "null"] }
+        designProject: { type: boolean }
+        onCall: { type: boolean }
+        pasCipDpw: { type: boolean }
+        latePayment: { type: boolean }
+        daysUntilDue: { type: ["integer", "null"] }
+        sourceSheets: { type: string }
+    ProjectInput:
+      type: object
+      required: [projectName]
+      properties:
+        projectNumber: { type: string }
+        projectName: { type: string, minLength: 1 }
+        dirNumber: { type: string }
+        classification: { type: string }
+        contractorId: { type: ["integer", "null"] }
+        intakeDate: { type: ["string", "null"] }
+        registrationStatus: { type: string }
+        registrationBypass: { type: boolean }
+        registrationBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        registrationCheckedOn: { type: ["string", "null"] }
+        payrollFormsStatus: { type: string }
+        payrollFormsBypass: { type: boolean }
+        payrollFormsBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        payrollFormsCheckedOn: { type: ["string", "null"] }
+        formsStatus: { type: string, enum: ["Not tracked", "Projects with missing forms", "Projects with all forms"] }
+        form1Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form2Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form3Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form4Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        federalProjectNumber: { type: string }
+        davisBaconDetermination: { type: string }
+        federalSetupInLcp: { type: string }
+        federalNotes: { type: string }
+        federalActive: { type: string }
+        paymentDueDate: { type: ["string", "null"] }
+        paymentDate: { type: ["string", "null"] }
+        complianceNotes: { type: string }
+        projectInitiationDate: { type: ["string", "null"] }
+        projectFinishDate: { type: ["string", "null"] }
+        pwc100: { type: boolean }
+        pwc100RegisteredDate: { type: ["string", "null"] }
+        pwc100ExpirationDate: { type: ["string", "null"] }
+        designProjectManager: { type: string }
+        designProjectManagerEmail: { type: string }
+        designWeekStart: { type: ["string", "null"] }
+        designWeekEnd: { type: ["string", "null"] }
+        designPwcrExpirationDate: { type: ["string", "null"] }
+        primeApprover: { type: string }
+        federalProject: { type: boolean }
+        designProject: { type: boolean }
+        onCall: { type: boolean }
+        pasCipDpw: { type: boolean }
+    ProjectUpdate:
+      type: object
+      properties:
+        projectNumber: { type: string }
+        projectName: { type: string, minLength: 1 }
+        dirNumber: { type: string }
+        classification: { type: string }
+        contractorId: { type: ["integer", "null"] }
+        intakeDate: { type: ["string", "null"] }
+        registrationStatus: { type: string }
+        registrationBypass: { type: boolean }
+        registrationBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        registrationCheckedOn: { type: ["string", "null"] }
+        payrollFormsStatus: { type: string }
+        payrollFormsBypass: { type: boolean }
+        payrollFormsBypassStatus: { type: string, enum: ["", "OK", "Completed"] }
+        payrollFormsCheckedOn: { type: ["string", "null"] }
+        formsStatus: { type: string, enum: ["Not tracked", "Projects with missing forms", "Projects with all forms"] }
+        form1Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form2Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form3Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        form4Status: { type: string, enum: ["Not tracked", "Not checked", "Complete", "Missing"] }
+        federalProjectNumber: { type: string }
+        davisBaconDetermination: { type: string }
+        federalSetupInLcp: { type: string }
+        federalNotes: { type: string }
+        federalActive: { type: string }
+        paymentDueDate: { type: ["string", "null"] }
+        paymentDate: { type: ["string", "null"] }
+        complianceNotes: { type: string }
+        projectInitiationDate: { type: ["string", "null"] }
+        projectFinishDate: { type: ["string", "null"] }
+        pwc100: { type: boolean }
+        pwc100RegisteredDate: { type: ["string", "null"] }
+        pwc100ExpirationDate: { type: ["string", "null"] }
+        designProjectManager: { type: string }
+        designProjectManagerEmail: { type: string }
+        designWeekStart: { type: ["string", "null"] }
+        designWeekEnd: { type: ["string", "null"] }
+        designPwcrExpirationDate: { type: ["string", "null"] }
+        primeApprover: { type: string }
+        federalProject: { type: boolean }
+        designProject: { type: boolean }
+        onCall: { type: boolean }
+        pasCipDpw: { type: boolean }
+    Withholding:
+      type: object
+      required: [id, projectId, contractorId, projectName, contractorName, invoiceReference, amountWithheld, notificationDate, notificationDateText, reason, releaseDate, releaseDateText, releaseReference, notes]
+      properties:
+        id: { type: integer }
+        projectId: { type: ["integer", "null"] }
+        contractorId: { type: ["integer", "null"] }
+        projectName: { type: string }
+        contractorName: { type: string }
+        invoiceReference: { type: string }
+        projectNumberOriginal: { type: string }
+        projectMatch: { type: string }
+        amountWithheld: { type: number }
+        notificationDate: { type: ["string", "null"] }
+        notificationDateText: { type: string }
+        reason: { type: string }
+        releaseDate: { type: ["string", "null"] }
+        releaseDateText: { type: string }
+        releaseReference: { type: string }
+        notes: { type: string }
+        released: { type: boolean }
+    WithholdingInput:
+      type: object
+      required: [amountWithheld]
+      properties:
+        projectId: { type: ["integer", "null"] }
+        contractorId: { type: ["integer", "null"] }
+        invoiceReference: { type: string }
+        amountWithheld: { type: number, minimum: 0 }
+        notificationDate: { type: ["string", "null"] }
+        notificationDateText: { type: string }
+        reason: { type: string }
+        releaseDate: { type: ["string", "null"] }
+        releaseDateText: { type: string }
+        releaseReference: { type: string }
+        notes: { type: string }
+    WithholdingUpdate:
+      type: object
+      properties:
+        projectId: { type: ["integer", "null"] }
+        contractorId: { type: ["integer", "null"] }
+        invoiceReference: { type: string }
+        amountWithheld: { type: number, minimum: 0 }
+        notificationDate: { type: ["string", "null"] }
+        notificationDateText: { type: string }
+        reason: { type: string }
+        releaseDate: { type: ["string", "null"] }
+        releaseDateText: { type: string }
+        releaseReference: { type: string }
+        notes: { type: string }
+    Restitution:
+      type: object
+      required: [id, projectId, projectName, contractorId, contractorName, status, firstEmailSentDate, apprenticeName, apprenticeCraft, cprWeekEndingDate, unsupervisedHoursDates, numberOfUnsupervisedHours, amountOwed, paidForRestitution, checkCopyProvided, proofOfDepositProvided, wageDifferenceCalculationsProvided, uploadedDocsInLcptracker, confidentialNotesAddedToCpr, cprReviewAccepted, comments]
+      properties:
+        id: { type: integer }
+        projectId: { type: ["integer", "null"] }
+        projectName: { type: string }
+        contractorId: { type: ["integer", "null"] }
+        contractorName: { type: string }
+        status: { type: string, enum: ["Open", "Notice sent", "In progress", "Paid", "Disputed", "Closed"] }
+        firstEmailSentDate: { type: ["string", "null"], format: date }
+        apprenticeName: { type: string }
+        apprenticeCraft: { type: string }
+        cprWeekEndingDate: { type: ["string", "null"], format: date }
+        unsupervisedHoursDates: { type: string }
+        numberOfUnsupervisedHours: { type: ["number", "null"] }
+        amountOwed: { type: number }
+        paidForRestitution: { type: string, enum: ["Not checked", "Yes", "No"] }
+        checkCopyProvided: { type: boolean }
+        proofOfDepositProvided: { type: boolean }
+        wageDifferenceCalculationsProvided: { type: boolean }
+        uploadedDocsInLcptracker: { type: string, enum: ["Not checked", "Yes", "No"] }
+        confidentialNotesAddedToCpr: { type: string, enum: ["Not checked", "Yes", "No"] }
+        cprReviewAccepted: { type: string, enum: ["Not checked", "Yes", "No"] }
+        comments: { type: string }
+    RestitutionInput:
+      type: object
+      required: [amountOwed]
+      properties:
+        projectId: { type: ["integer", "null"] }
+        contractorId: { type: ["integer", "null"] }
+        status: { type: string, enum: ["Open", "Notice sent", "In progress", "Paid", "Disputed", "Closed"] }
+        firstEmailSentDate: { type: ["string", "null"], format: date }
+        apprenticeName: { type: string }
+        apprenticeCraft: { type: string }
+        cprWeekEndingDate: { type: ["string", "null"], format: date }
+        unsupervisedHoursDates: { type: string }
+        numberOfUnsupervisedHours: { type: ["number", "null"], minimum: 0 }
+        amountOwed: { type: number, minimum: 0 }
+        paidForRestitution: { type: string, enum: ["Not checked", "Yes", "No"] }
+        checkCopyProvided: { type: boolean }
+        proofOfDepositProvided: { type: boolean }
+        wageDifferenceCalculationsProvided: { type: boolean }
+        uploadedDocsInLcptracker: { type: string, enum: ["Not checked", "Yes", "No"] }
+        confidentialNotesAddedToCpr: { type: string, enum: ["Not checked", "Yes", "No"] }
+        cprReviewAccepted: { type: string, enum: ["Not checked", "Yes", "No"] }
+        comments: { type: string }
+    RestitutionUpdate:
+      type: object
+      properties:
+        projectId: { type: ["integer", "null"] }
+        contractorId: { type: ["integer", "null"] }
+        status: { type: string, enum: ["Open", "Notice sent", "In progress", "Paid", "Disputed", "Closed"] }
+        firstEmailSentDate: { type: ["string", "null"], format: date }
+        apprenticeName: { type: string }
+        apprenticeCraft: { type: string }
+        cprWeekEndingDate: { type: ["string", "null"], format: date }
+        unsupervisedHoursDates: { type: string }
+        numberOfUnsupervisedHours: { type: ["number", "null"], minimum: 0 }
+        amountOwed: { type: number, minimum: 0 }
+        paidForRestitution: { type: string, enum: ["Not checked", "Yes", "No"] }
+        checkCopyProvided: { type: boolean }
+        proofOfDepositProvided: { type: boolean }
+        wageDifferenceCalculationsProvided: { type: boolean }
+        uploadedDocsInLcptracker: { type: string, enum: ["Not checked", "Yes", "No"] }
+        confidentialNotesAddedToCpr: { type: string, enum: ["Not checked", "Yes", "No"] }
+        cprReviewAccepted: { type: string, enum: ["Not checked", "Yes", "No"] }
+        comments: { type: string }
+    RestitutionStorageError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    WorkbookSheetRow:
+      type: object
+      required: [id, sourceSheet, excelRow, cellsJson]
+      properties:
+        id: { type: integer }
+        sourceSheet: { type: string }
+        excelRow: { type: integer }
+        cellsJson: { type: string }
+    ReferenceOnlyCount:
+      type: object
+      required: [name, count]
+      properties:
+        name: { type: string }
+        count: { type: integer }
+    ReferenceOnlySummary:
+      type: object
+      required: [totalProjects, sourceRowCount, relatedRecordCount, sourceSheetCounts, relatedTableCounts]
+      properties:
+        totalProjects: { type: integer }
+        sourceRowCount: { type: integer }
+        relatedRecordCount: { type: integer }
+        sourceSheetCounts:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceOnlyCount" }
+        relatedTableCounts:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceOnlyCount" }
+    ReferenceOnlySourceRow:
+      type: object
+      required: [id, sourceSheet, excelRow, cells]
+      properties:
+        id: { type: integer }
+        sourceSheet: { type: string }
+        excelRow: { type: integer }
+        cells:
+          type: object
+          additionalProperties: true
+    ReferenceOnlyRelatedRecord:
+      type: object
+      required: [tableName, recordId, sourceSheet, excelRow, fields]
+      properties:
+        tableName: { type: string }
+        recordId: { type: integer }
+        sourceSheet: { type: ["string", "null"] }
+        excelRow: { type: ["integer", "null"] }
+        fields:
+          type: object
+          additionalProperties: true
+    ReferenceOnlyProject:
+      type: object
+      required: [id, projectKey, category, name, sourceSheet, excelRow, sourceRows, relatedRecords]
+      properties:
+        id: { type: integer }
+        projectKey: { type: string }
+        category: { type: string }
+        name: { type: string }
+        sourceSheet: { type: string }
+        excelRow: { type: ["integer", "null"] }
+        sourceRows:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceOnlySourceRow" }
+        relatedRecords:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceOnlyRelatedRecord" }
+    ReferenceOnlyCatalog:
+      type: object
+      required: [summary, records, refreshedAt]
+      properties:
+        summary: { $ref: "#/components/schemas/ReferenceOnlySummary" }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceOnlyProject" }
+        refreshedAt: { type: string, format: date-time }
+    DatabaseColumn:
+      type: object
+      required: [name, dataType, nullable, primaryKey, identity, computed, editable, maxLength, precision, scale]
+      properties:
+        name: { type: string }
+        dataType: { type: string }
+        nullable: { type: boolean }
+        primaryKey: { type: boolean }
+        identity: { type: boolean }
+        computed: { type: boolean }
+        editable: { type: boolean }
+        maxLength: { type: ["integer", "null"] }
+        precision: { type: integer }
+        scale: { type: integer }
+    DatabaseTable:
+      type: object
+      required: [schemaName, tableName, recordCount, columns]
+      properties:
+        schemaName: { type: string }
+        tableName: { type: string }
+        recordCount: { type: integer }
+        columns:
+          type: array
+          items: { $ref: "#/components/schemas/DatabaseColumn" }
+    DatabaseCatalog:
+      type: object
+      required: [tables, refreshedAt]
+      properties:
+        tables:
+          type: array
+          items: { $ref: "#/components/schemas/DatabaseTable" }
+        refreshedAt: { type: string, format: date-time }
+    DatabaseRowsQuery:
+      type: object
+      required: [page, pageSize]
+      properties:
+        page: { type: integer, minimum: 1, default: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        search: { type: string, maxLength: 200 }
+    DatabaseRows:
+      type: object
+      required: [schemaName, tableName, columns, rows, total, page, pageSize]
+      properties:
+        schemaName: { type: string }
+        tableName: { type: string }
+        columns:
+          type: array
+          items: { $ref: "#/components/schemas/DatabaseColumn" }
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    DatabaseScalar:
+      type: ["string", "number", "boolean", "null"]
+    DatabaseRowUpdate:
+      type: object
+      required: [key, values]
+      properties:
+        key:
+          type: object
+          minProperties: 1
+          additionalProperties: { $ref: "#/components/schemas/DatabaseScalar" }
+        values:
+          type: object
+          minProperties: 1
+          additionalProperties: { $ref: "#/components/schemas/DatabaseScalar" }
+    DatabaseRowUpdateResponse:
+      type: object
+      required: [updated, schemaName, tableName]
+      properties:
+        updated: { type: boolean }
+        schemaName: { type: string }
+        tableName: { type: string }
